@@ -9,7 +9,6 @@
       - gnupg-agent
       - nginx
       - software-properties-common
-      - ufw
     state: present
 - name: "Add nodejs apt key"
   apt_key:

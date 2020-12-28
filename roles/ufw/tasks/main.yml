@@ -1,3 +1,10 @@
+- name: Install apt packages for UFW and fail2ban
+  apt:
+    update_cache: yes
+    name:
+      - fail2ban
+      - ufw
+    state: present
 - name: "Reset UFW Rules"
   ufw: 
     state: reset
@@ -21,3 +28,7 @@
   ufw:
     state: enabled
     logging: on
+- name: restart fail2ban
+  service:
+    name=fail2ban
+    state=restarted

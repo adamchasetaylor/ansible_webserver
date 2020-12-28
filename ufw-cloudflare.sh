@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# script from https://gadelkareem.com/2019/06/11/allow-cloudflare-ips-on-port-80-and-443-using-ufw/
 
 set -euo pipefail
 
