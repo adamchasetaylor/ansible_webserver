@@ -1,0 +1,3 @@
+certs/cert.key
+certs/cert.pem
+nginx.conf

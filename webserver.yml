@@ -1,0 +1,64 @@
+---
+  - name: Playbook
+    hosts: dfw
+    gather_facts: no
+    tasks:
+    - name: Install apt packages for GPG and NGINX
+      apt:
+        update_cache: yes
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - git
+          - gnupg-agent
+          - nginx
+          - software-properties-common
+        state: present
+    - name: "Add nodejs apt key"
+      apt_key:
+        url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
+        state: present
+    - name: "Add nodejs 14.x ppa for apt repo"
+      apt_repository:
+        repo: deb https://deb.nodesource.com/node_14.x focal main
+        update_cache: yes
+    - name: Install apt packages for nodejs
+      apt:
+        update_cache: yes
+        name:
+          - nodejs
+        state: present
+    - name: Install globally package "pm2"
+      npm:
+        name: pm2
+        global: yes
+        state: present
+    - name: Create Directories
+      file:
+        path: "{{item.path}}"
+        state: "{{item.state}}"
+        mode: "u=rwx,g=rx,o=x"
+        owner: "{{item.owner}}"
+        group: "{{item.group}}"
+      with_items:
+        - { path: '/etc/nginx/certs', owner: 'root', group: 'root', state: 'directory'}
+        - { path: '/var/www/app', owner: 'root', group: 'root', state: 'directory' }
+        - { path: '/var/www/assets', owner: 'www-data', group: 'www-data', state: 'directory' }
+        - { path: '/var/www/html', owner: 'root', group: 'root', state: 'absent' }
+    - name: Setup NGINX and Test App
+      template: src={{item.src}} dest={{item.dest}}
+      with_items:
+          - { src: 'certs/cert.pem', dest: '/etc/nginx/certs/cert.pem' }
+          - { src: 'certs/cert.key', dest: '/etc/nginx/certs/cert.key' }
+          - { src: 'nginx.conf', dest: '/etc/nginx/sites-available/default' }
+          - { src: 'app.js', dest: '/var/www/app/app.js' }
+          - { src: 'index.html', dest: '/var/www/index.html' }
+      notify: restart nginx
+    - name: Start PM2
+      command: pm2 start /var/www/app/app.js --watch
+    handlers:
+    - name: restart nginx
+      service:
+        name=nginx
+        state=restarted
