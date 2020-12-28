@@ -14,7 +14,23 @@
           - gnupg-agent
           - nginx
           - software-properties-common
+          - ufw
         state: present
+    - name: "Update UFW Rules"
+      ufw: 
+        rule: "{{item.rule}}"
+        port: "{{item.port}}"
+        proto: "{{item.proto}}"
+      with_items:
+        - { rule: 'limit', port: 'ssh', proto: 'tcp' }
+        - { rule: 'allow', port: '443', proto: 'tcp' }
+    - name: "Update UFW Default Rules"
+      ufw: 
+        direction: "{{item.direction}}"
+        rule: "{{item.rule}}"
+      with_items:
+        - { direction: 'in', rule: 'deny' }
+        - { direction: 'out', rule: 'allow' }
     - name: "Add nodejs apt key"
       apt_key:
         url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
@@ -49,14 +65,18 @@
     - name: Setup NGINX and Test App
       template: src={{item.src}} dest={{item.dest}}
       with_items:
-          - { src: 'certs/cert.pem', dest: '/etc/nginx/certs/cert.pem' }
-          - { src: 'certs/cert.key', dest: '/etc/nginx/certs/cert.key' }
-          - { src: 'nginx.conf', dest: '/etc/nginx/sites-available/default' }
-          - { src: 'app.js', dest: '/var/www/app/app.js' }
-          - { src: 'index.html', dest: '/var/www/index.html' }
+        - { src: 'certs/cert.pem', dest: '/etc/nginx/certs/cert.pem' }
+        - { src: 'certs/cert.key', dest: '/etc/nginx/certs/cert.key' }
+        - { src: 'nginx.conf', dest: '/etc/nginx/sites-available/default' }
+        - { src: 'app.js', dest: '/var/www/app/app.js' }
+        - { src: 'index.html', dest: '/var/www/index.html' }
       notify: restart nginx
     - name: Start PM2
       command: pm2 start /var/www/app/app.js --watch
+    - name: Enable UFW
+      ufw:
+        state: enabled
+        logging: on
     handlers:
     - name: restart nginx
       service:
