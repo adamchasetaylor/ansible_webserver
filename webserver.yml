@@ -3,48 +3,9 @@
     hosts: dfw
     gather_facts: no
     tasks:
-    - name: Install apt packages for GPG and NGINX
-      apt:
-        update_cache: yes
-        name:
-          - apt-transport-https
-          - ca-certificates
-          - curl
-          - git
-          - gnupg-agent
-          - nginx
-          - software-properties-common
-          - ufw
-        state: present
-    - name: "Reset UFW Rules"
-      ufw: 
-        state: reset
-    - name: "Update UFW Rules"
-      ufw: 
-        rule: "{{item.rule}}"
-        port: "{{item.port}}"
-        proto: "{{item.proto}}"
-      with_items:
-        - { rule: 'limit', port: 'ssh', proto: 'tcp' }
-    - name: "Add nodejs apt key"
-      apt_key:
-        url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
-        state: present
-    - name: "Add nodejs 14.x ppa for apt repo"
-      apt_repository:
-        repo: deb https://deb.nodesource.com/node_14.x focal main
-        update_cache: yes
-    - name: Install apt packages for nodejs
-      apt:
-        update_cache: yes
-        name:
-          - nodejs
-        state: present
-    - name: Install globally package "pm2"
-      npm:
-        name: pm2
-        global: yes
-        state: present
+    - name: setup Node/NPM/PM2
+      include_role:
+        name: node
     - name: Create Directories
       file:
         path: "{{item.path}}"
@@ -72,19 +33,9 @@
       ignore_errors: True
     - name: start pm2 process
       command: 'pm2 start -x -i max --name "node_app" /var/www/app/app.js --watch'
-    - name: Add Cloudflare IPs to UFW
-      command: '/bin/bash /root/ufw-cloudflare.sh'
-    - name: "Update UFW Default Rules"
-      ufw: 
-        direction: "{{item.direction}}"
-        rule: "{{item.rule}}"
-      with_items:
-        - { direction: 'in', rule: 'deny' }
-        - { direction: 'out', rule: 'allow' }
-    - name: Enable UFW
-      ufw:
-        state: enabled
-        logging: on
+    - name: setup UFW
+      include_role:
+        name: ufw
     handlers:
     - name: restart nginx
       service:
