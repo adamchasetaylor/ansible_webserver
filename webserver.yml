@@ -16,6 +16,9 @@
           - software-properties-common
           - ufw
         state: present
+    - name: "Reset UFW Rules"
+      ufw: 
+        state: reset
     - name: "Update UFW Rules"
       ufw: 
         rule: "{{item.rule}}"
@@ -23,14 +26,6 @@
         proto: "{{item.proto}}"
       with_items:
         - { rule: 'limit', port: 'ssh', proto: 'tcp' }
-        - { rule: 'allow', port: '443', proto: 'tcp' }
-    - name: "Update UFW Default Rules"
-      ufw: 
-        direction: "{{item.direction}}"
-        rule: "{{item.rule}}"
-      with_items:
-        - { direction: 'in', rule: 'deny' }
-        - { direction: 'out', rule: 'allow' }
     - name: "Add nodejs apt key"
       apt_key:
         url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
@@ -70,12 +65,22 @@
         - { src: 'nginx.conf', dest: '/etc/nginx/sites-available/default' }
         - { src: 'app.js', dest: '/var/www/app/app.js' }
         - { src: 'index.html', dest: '/var/www/index.html' }
+        - { src: 'ufw-cloudflare.sh', dest: '/root/ufw-cloudflare.sh'}
       notify: restart nginx
     - name: delete existing pm2 processes if running
       command: "pm2 delete node_app"
       ignore_errors: True
     - name: start pm2 process
       command: 'pm2 start -x -i max --name "node_app" /var/www/app/app.js --watch'
+    - name: Add Cloudflare IPs to UFW
+      command: '/bin/bash /root/ufw-cloudflare.sh'
+    - name: "Update UFW Default Rules"
+      ufw: 
+        direction: "{{item.direction}}"
+        rule: "{{item.rule}}"
+      with_items:
+        - { direction: 'in', rule: 'deny' }
+        - { direction: 'out', rule: 'allow' }
     - name: Enable UFW
       ufw:
         state: enabled
