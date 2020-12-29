@@ -12,21 +12,25 @@ server {
 
     root /var/www;
     
-    location ~ ^/functions/(.*)$ {
+    location / {
+        index index.html;
+        autoindex off;
+    }
+
+    location = /index.html {
+        # needed to block regex matching for index
+    }
+
+    location ^~ /assets/ {
+        autoindex on;
+    }
+
+    location ~ ^/(.+)$ {
         proxy_pass http://127.0.0.1:3000/$1;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
         proxy_cache_bypass $http_upgrade;
-    }
-
-    location /assets {
-        autoindex off;
-    }
-
-    location / {
-        index index.html;
-        autoindex off;
     }
 }
