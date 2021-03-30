@@ -18,6 +18,7 @@
         - { path: '/var/www/app', owner: 'root', group: 'root', state: 'directory' }
         - { path: '/var/www/assets', owner: 'www-data', group: 'www-data', state: 'directory' }
         - { path: '/var/www/html', owner: 'root', group: 'root', state: 'absent' }
+        - { path: '/etc/fail2ban/', owner: 'root', group: 'root', state: 'directory' }  
     - name: Setup NGINX and Test App
       template: src={{item.src}} dest={{item.dest}}
       with_items:
